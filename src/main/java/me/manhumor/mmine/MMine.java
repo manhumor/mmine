@@ -1,5 +1,6 @@
 package me.manhumor.mmine;
 
+import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.milkbowl.vault.economy.Economy;
@@ -16,6 +17,8 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.awt.*;
+import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -72,7 +75,8 @@ public class MMine extends JavaPlugin implements Listener {
         ConfigurationSection blockSection = getConfig().getConfigurationSection(blockType.name());
 
         double randomNumber = 0;
-        if (Math.random() * 100.0 <= blockSection.getDouble("chance")) {
+        double chance = blockSection.getDouble("chance");
+        if (Math.random() * 100.0 <= chance) {
             double min = blockSection.getDouble("min");
             double max = blockSection.getDouble("max");
 
@@ -82,21 +86,39 @@ public class MMine extends JavaPlugin implements Listener {
                 getLogger().warning("§c| §fУ вaс возниклa ошибкa при нaчислении денег игроку");
                 getLogger().warning("§c| §fНaпишите к создaтелю плaгинa в дискорд: §cman_humor");
                 Bukkit.getPluginManager().disablePlugin(this);
+                return;
             }
         }
 
-        List<String> messageList = blockSection.getStringList("message");
+        Object messageList = blockSection.get("message");
         String actionbarMessage = blockSection.getString("action-bar");
 
-        if (!messageList.isEmpty()) {
-            for (String line : messageList) {
-                player.sendMessage(ColorParser.parseString(line)
-                        .replaceAll("%randomNumber", Integer.toString((int) randomNumber)));
+        if (messageList instanceof List) {
+            List<String> lines = (List<String>) messageList;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                if (!line.trim().isEmpty()) {
+                    String parsedLine = ColorParser.parseString(line)
+                            .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber));
+                    sb.append(parsedLine);
+                    if (i < lines.size() - 1) {
+                        sb.append("\n");
+                    }
+                }
             }
+            player.sendMessage(sb.toString());
+        } else if (messageList instanceof String msg && !msg.trim().isEmpty()) {
+            player.sendMessage(ColorParser.parseString(msg)
+                    .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber)));
         }
-        if (!actionbarMessage.isEmpty()) player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
-                TextComponent.fromLegacyText(ColorParser.parseString(actionbarMessage)
-                        .replaceAll("%randomNumber", Integer.toString((int) randomNumber))));
+
+        if (!actionbarMessage.isEmpty()) {
+            String parsedActionbarMessage = ColorParser.parseString(actionbarMessage)
+                    .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber));
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                    TextComponent.fromLegacyText(parsedActionbarMessage));
+        }
 
         if (replaceEnable) {
             block.setType(Material.valueOf(replaceBlock));

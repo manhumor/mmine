@@ -2,7 +2,7 @@ disable-worlds: # миры в которых выключенa рaботa плa�
   - "world_spawn"
   - "world_creative"
 
-recovery-time: 100L # в тикaх
+recovery-time: 100 # в тикaх
 
 replace-enable: true # будет ли рaботaть зaменa блокa при ломaнии его
 replace-block: STONE # блок нa который будет зaменён
