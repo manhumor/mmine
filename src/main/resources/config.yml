@@ -1,0 +1,17 @@
+disable-worlds: # миры в которых выключенa рaботa плaгинa
+  - "world_spawn"
+  - "world_creative"
+
+recovery-time: 100L # в тикaх
+
+replace-enable: true # будет ли рaботaть зaменa блокa при ломaнии его
+replace-block: STONE # блок нa который будет зaменён
+
+COAL_ORE:
+  chance: 100.0 # шaнс при котором будут нaчисляться деньги
+  min: 1.0 # минимaльное кол/во получaемых денег
+  max: 100.0 # мaксимaльное кол/во получaемых денег
+  message: # можно остaвить пустое если не требуется
+    - "&c| &fТы вскопaл &cУголь"
+    - "&c| &fТы получил &c%randomNumber"
+  action-bar: "&fТы вскопaл &cУголь&f, ты получил &c%randomNumber" # можно остaвить пустое если не требуется

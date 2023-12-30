@@ -1,0 +1,9 @@
+name: MMine
+version: '${version}'
+main: me.manhumor.mmine.MMine
+api-version: '1.16'
+prefix: MMINE
+authors: [man_humor]
+permissions:
+  mmine.use:
+    description: Permission to use the plugin lol
