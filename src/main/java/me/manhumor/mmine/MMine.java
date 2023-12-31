@@ -1,6 +1,5 @@
 package me.manhumor.mmine;
 
-import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.milkbowl.vault.economy.Economy;
@@ -9,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -17,7 +17,6 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.awt.*;
 import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +24,8 @@ import java.util.Set;
 
 public class MMine extends JavaPlugin implements Listener {
     private static Economy econ = null;
+    private static FileConfiguration config;
+
     private Set<String> disabledWorlds;
     private Boolean replaceEnable;
     private String replaceBlock;
@@ -34,10 +35,12 @@ public class MMine extends JavaPlugin implements Listener {
     public void onEnable() {
         saveDefaultConfig();
 
-        disabledWorlds = new HashSet<>(getConfig().getStringList("disable-worlds"));
-        replaceEnable = getConfig().getBoolean("replace-enable");
-        replaceBlock = getConfig().getString("replace-block");
-        recoveryTime = getConfig().getLong("recovery-time");
+        config = getConfig();
+
+        disabledWorlds = new HashSet<>(config.getStringList("disable-worlds"));
+        replaceEnable = config.getBoolean("replace-enable");
+        replaceBlock = config.getString("replace-block");
+        recoveryTime = config.getLong("recovery-time");
 
         getLogger().info("§c. . . . . . . . . . . .");
         getLogger().info("§c| §fPlugin §cM§fMine");
@@ -69,10 +72,10 @@ public class MMine extends JavaPlugin implements Listener {
         Block block = event.getBlock();
         Material blockType = block.getType();
 
-        if (!getConfig().contains(blockType.name()) || disabledWorlds.contains(block.getWorld().getName())) return;
+        if (!config.contains(blockType.name()) || disabledWorlds.contains(block.getWorld().getName())) return;
         if (!player.hasPermission("mmine.use")) return;
         event.setCancelled(true);
-        ConfigurationSection blockSection = getConfig().getConfigurationSection(blockType.name());
+        ConfigurationSection blockSection = config.getConfigurationSection(blockType.name());
 
         double randomNumber = 0;
         double chance = blockSection.getDouble("chance");
@@ -90,34 +93,26 @@ public class MMine extends JavaPlugin implements Listener {
             }
         }
 
-        Object messageList = blockSection.get("message");
+        List<String> messageList = blockSection.getStringList("message");
         String actionbarMessage = blockSection.getString("action-bar");
 
-        if (messageList instanceof List) {
-            List<String> lines = (List<String>) messageList;
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < lines.size(); i++) {
-                String line = lines.get(i);
-                if (!line.trim().isEmpty()) {
-                    String parsedLine = ColorParser.parseString(line)
-                            .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber));
-                    sb.append(parsedLine);
-                    if (i < lines.size() - 1) {
-                        sb.append("\n");
-                    }
-                }
-            }
-            player.sendMessage(sb.toString());
-        } else if (messageList instanceof String msg && !msg.trim().isEmpty()) {
-            player.sendMessage(ColorParser.parseString(msg)
+        String message = "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < messageList.size(); i++) {
+            String line = messageList.get(i);
+            sb.append(ColorParser.parseString(line)
                     .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber)));
+            if (i < messageList.size() - 1) {
+                sb.append("\n");
+            }
         }
+        message = sb.toString();
+        if (!message.trim().isEmpty()) player.sendMessage(message);
 
-        if (!actionbarMessage.isEmpty()) {
-            String parsedActionbarMessage = ColorParser.parseString(actionbarMessage)
-                    .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber));
+        if (!actionbarMessage.trim().isEmpty()) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
-                    TextComponent.fromLegacyText(parsedActionbarMessage));
+                    TextComponent.fromLegacyText(ColorParser.parseString(actionbarMessage)
+                            .replaceAll("%randomNumber", MessageFormat.format("{0,number,#.##}", randomNumber))));
         }
 
         if (replaceEnable) {
